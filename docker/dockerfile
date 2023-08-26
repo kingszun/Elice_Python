@@ -1,0 +1,46 @@
+FROM python:3.9.17
+
+ENV TZ=Asia/Seoul
+
+ARG USERNAME=kingszun
+ARG WORKSPACE=/home/${USERNAME}
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+
+RUN apt update && apt upgrade -y
+RUN apt -y install git \
+    wget \
+    vim openssh-server \
+    sudo
+
+
+RUN groupadd --gid ${USER_GID} ${USERNAME}
+RUN useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME}
+RUN echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    chmod 0440 /etc/sudoers.d/${USERNAME} \
+    mkdir -p ${WORKSPACE} \
+    chown -R ${USERNAME}:${USERNAME} ${WORKSPACE}
+
+
+
+# 경우에 따라 시간대가 안맞는 에러가 발생해서, 이 코드는 웬만하면 넣는게 좋습니다. 
+# RUN sudo apt install -y language-pack
+# RUN sudo update-locale
+# 설치로 생성된 캐시 파일들을 삭제해서 용량 줄이기!
+RUN apt clean && \
+    apt autoclean && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+# RUN rm -rf /var/lib/cache/*
+# RUN rm -rf /var/lib/log/*
+
+EXPOSE 22 \
+    3306
+
+RUN mkdir -p ${WORKSPACE}/GitHub/Elice_Python
+RUN git clone https://github.com/kingszun/BaekJoon.git ${WORKSPACE}/GitHub/Elice_Python
+
+
+WORKDIR ${WORKSPACE}
